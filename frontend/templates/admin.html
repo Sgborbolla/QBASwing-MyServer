@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QBASwing MyServer · {{ T['ui.admin'] }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="lang-switcher" id="langSwitcher"></div>
+<div class="cinema-bg"></div>
+
+<div class="topbar">
+  <div class="brand">
+    <img class="topbar-logo" src="{{ url_for('static', filename='img/logo-qbaswing-64.png') }}" alt="QBASwing Designer">
+    <span class="name">{{ app_name }}</span>
+    <span class="slogan">{% if business_label %}{{ business_label }} · {% endif %}{{ T['ui.admin'] }}</span>
+  </div>
+  <div class="who">
+    <span class="tag">{{ T['users.role.' + user_role] if ('users.role.' + user_role) in T else user_role }}</span>
+    <span>{{ username }}</span>
+    <a class="logout-link" href="{{ url_for('logout') }}">{{ T['nav.logout'] }}</a>
+  </div>
+</div>
+<div class="sprocket-strip"></div>
+
+<div class="admin-tabs">
+  <button class="admin-tab active btn-tactile" data-tab="dashboard">{{ T['ui.summary'] }}</button>
+  <button class="admin-tab btn-tactile" data-tab="locations">{{ T['ui.locations'] }}</button>
+  <button class="admin-tab btn-tactile" data-tab="library">{{ T['ui.library'] }}</button>
+  <button class="admin-tab btn-tactile" data-tab="requests">{{ T['ui.requests'] }}</button>
+  <button class="admin-tab btn-tactile" data-tab="donations">{{ T['ui.sponsors'] }}</button>
+  <button class="admin-tab btn-tactile" data-tab="accounts">{{ T['ui.accounts'] }}</button>
+  <button class="admin-tab btn-tactile" data-tab="users">{{ T['ui.sessions'] }}</button>
+  <button class="admin-tab btn-tactile" data-tab="downloads">{{ T['ui.downloads'] }}</button>
+  <button class="admin-tab btn-tactile" data-tab="settings">{{ T['ui.settings'] }}</button>
+</div>
+
+<!-- RESUMEN -->
+<div class="admin-section active" id="tab-dashboard">
+  <div class="stats-row" id="statsRow"></div>
+  <div class="panel-box">
+    <h3>Bienvenido, {{ username }}</h3>
+    <p class="small-note">
+      Desde aquí controlas qué contenido ve el cliente. Agrega ubicaciones (torres o carpetas específicas),
+      escanéalas para detectar películas, series, novelas y documentales, y decide qué archivos se publican
+      en la biblioteca. También puedes revisar y autorizar las solicitudes de descarga de los clientes.
+    </p>
+  </div>
+
+  <div class="panel-box">
+    <h3>{{ T['ui.network'] }}</h3>
+    <div class="network-grid" id="networkInfoBox">
+      <p class="small-note">{{ T['ui.detecting'] }}</p>
+    </div>
+    <div class="network-qr-wrap">
+      <p class="small-note" style="margin-bottom:8px;">{{ T['dashboard.qr'] }}</p>
+      <div id="networkQrBox" class="network-qr-box"><p class="small-note">{{ T['ui.generating_qr'] }}</p></div>
+    </div>
+    <p class="small-note">
+      El código QR y la URL de acceso se recalculan automáticamente si este servidor cambia de
+      red — nunca dependen de una {{ T['ui.ip'] }} fija. Cualquier dispositivo conectado al mismo WiFi/LAN
+      puede escanear el QR para abrir {{ app_name }} directamente.
+    </p>
+  </div>
+</div>
+
+<!-- UBICACIONES -->
+<div class="admin-section" id="tab-locations">
+  <div class="panel-box explorer-panel">
+    <h3>{{ T['ui.library_explorer'] }}</h3>
+    <p class="small-note">
+      Este es el único método para agregar contenido: navega tus discos y carpetas como en un
+      explorador de archivos real, marca con la casilla ☑ lo que quieras publicar (una unidad
+      completa, una carpeta, una subcarpeta o archivos sueltos) y agrégalo de una vez. Queda
+      publicado automáticamente — no hace falta activarlo después en {{ T['ui.library'] }}.
+    </p>
+
+    <div class="explorer-toolbar">
+      <button class="explorer-nav-btn btn-tactile" id="expBackBtn" type="button" disabled>← Atrás</button>
+      <button class="explorer-nav-btn btn-tactile" id="expRootBtn" type="button">🏠 Inicio</button>
+      <div class="explorer-breadcrumb" id="expBreadcrumb"></div>
+    </div>
+
+    <div class="explorer-grid" id="expGrid">
+      <div class="empty-state"><div class="big">💽</div><div class="title">{{ T['ui.loading_drives'] }}</div></div>
+    </div>
+
+    <div class="lib-picker-footer">
+      <span class="small-note" id="libPickerSelectionSummary">0 elementos marcados</span>
+      <button class="btn-primary btn-tactile" id="addSelectionBtn" type="button" disabled>{{ T['ui.add_selected'] }}</button>
+    </div>
+
+    <div class="panel-box" style="margin-top:14px;">
+      <h3>{{ T['ui.import_device'] }}</h3>
+      <p class="small-note" style="margin-bottom:10px;">
+        Selecciona archivos directamente desde el teléfono, tablet o PC. El selector del sistema
+        permite acceder a las ubicaciones que el dispositivo ponga a disposición del navegador.
+      </p>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn-secondary btn-tactile" id="deviceFilesBtn" type="button">
+          📱 Seleccionar archivos
+        </button>
+        <button class="btn-secondary btn-tactile" id="deviceFolderBtn" type="button">
+          📂 Seleccionar carpeta
+        </button>
+      </div>
+      <input id="deviceFilesInput" type="file" multiple hidden>
+      <input id="deviceFolderInput" type="file" webkitdirectory directory multiple hidden>
+      <div class="small-note" id="deviceImportStatus" style="margin-top:10px;"></div>
+    </div>
+  </div>
+
+  <div class="panel-box">
+    <h3>{{ T['ui.locations'] }} registradas</h3>
+    <p class="small-note" style="margin-bottom:10px;">{{ T['ui.library_import_note'] }}</p>
+    <table class="data-table">
+      <thead>
+        <tr><th>{{ T['ui.label'] }}</th><th>{{ T['ui.path'] }}</th><th>{{ T['ui.mode'] }}</th><th>{{ T['ui.last_scan'] }}</th><th></th></tr>
+      </thead>
+      <tbody id="locationsTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- BIBLIOTECA -->
+<div class="admin-section" id="tab-library">
+  <div class="panel-box" style="padding-bottom:6px;">
+    <h3>{{ T['ui.library'] }} (vista administrativa)</h3>
+    <p class="small-note" style="margin-bottom:12px;">
+      La misma experiencia visual que ve el cliente, con permisos de administrador encima: se
+      muestra TODO lo detectado (lo no publicado aparece marcado), puedes navegar carpetas igual
+      que el cliente, y alternar la publicación de cada archivo directamente desde su tarjeta.
+    </p>
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="adminLibrarySearch" placeholder="{{ T['ui.search'] }} por nombre, categoría, carpeta, extensión o ubicación...">
+      <span class="small-note" id="adminSearchCount"></span>
+    </div>
+  </div>
+  <div class="explorer-toolbar" id="adminLibToolbar">
+    <button class="explorer-nav-btn btn-tactile" id="adminLibBackBtn" type="button" style="display:none;">← Atrás</button>
+    <div class="explorer-breadcrumb" id="adminLibBreadcrumb"></div>
+  </div>
+  <div id="adminLibraryGrid"><p class="small-note" style="padding:0 22px;">{{ T['ui.loading'] }}</p></div>
+</div>
+
+<!-- SOLICITUDES -->
+<div class="admin-section" id="tab-requests">
+  <div class="panel-box">
+    <h3>{{ T['ui.requests'] }} de descarga</h3>
+    <table class="data-table">
+      <thead>
+        <tr><th>#</th><th>{{ T['ui.client'] }}</th><th>{{ T['ui.files'] }}</th><th>{{ T['ui.size'] }}</th><th>{{ T['ui.price'] }}</th><th>{{ T['ui.status'] }}</th><th>{{ T['ui.payment'] }}</th><th>{{ T['ui.date'] }}</th><th></th></tr>
+      </thead>
+      <tbody id="requestsTableBody"></tbody>
+    </table>
+    <p class="small-note">
+      Compara el mensaje de verificación enviado por el cliente con el comprobante que tú
+      recibiste por tu método de cobro configurado (ver pestaña {{ T['ui.settings'] }}) antes de aprobar
+      una solicitud.
+    </p>
+  </div>
+</div>
+
+<!-- PATROCINIO Y DONACIONES -->
+<div class="admin-section" id="tab-donations">
+  <div class="panel-box">
+    <h3>{{ T['ui.public_donations'] }}</h3>
+    <p class="small-note" style="margin-top:0;">
+      Comparte este enlace con quien quiera patrocinar o donar. No requiere cuenta ni inicio de sesión.
+    </p>
+    <a class="btn-secondary btn-tactile" href="{{ url_for('donations_page') }}" target="_blank" rel="noopener" style="display:inline-block;">🔗 Abrir /donaciones</a>
+  </div>
+
+  <div class="panel-box">
+    <h3>{{ T['ui.goal_contact'] }}</h3>
+    <div class="row-inline">
+      <div class="field">
+        <label>{{ T['ui.label'] }} de la meta</label>
+        <input type="text" id="donGoalLabel" placeholder="Meta de recaudación">
+      </div>
+      <div class="field">
+        <label>{{ T['ui.amount'] }} de la meta</label>
+        <input type="number" id="donGoalAmount" min="0" step="1">
+      </div>
+      <div class="field">
+        <label>{{ T['ui.currency'] }}</label>
+        <input type="text" id="donCurrency" placeholder="USD">
+      </div>
+    </div>
+    <div class="field">
+      <label>{{ T['ui.intro_text'] }}</label>
+      <input type="text" id="donIntroText" placeholder="{{ T['ui.message'] }} que ve el visitante en /donaciones">
+    </div>
+    <div class="field">
+      <label>{{ T['ui.whatsapp_number'] }}</label>
+      <input type="text" id="donWhatsapp" placeholder="+53 58147030">
+    </div>
+    <div class="field">
+      <label>{{ T['ui.crypto_info'] }}</label>
+    </div>
+    <div class="field">
+      <label>🪙 USDT — TRC20 (SafePal)</label>
+      <input type="text" id="donUsdtInfo" placeholder="Dirección USDT TRC20">
+    </div>
+    <div class="field">
+      <label>🪙 PYUSD — Solana/SPL (SafePal)</label>
+      <input type="text" id="donPyusdInfo" placeholder="Dirección PYUSD Solana/SPL">
+    </div>
+    <div class="field">
+      <label>💳 TropiPay</label>
+      <textarea id="donTropipayInfo" rows="9" placeholder="USD $15 — enlace
+USD $25 — enlace
+USD $50 — enlace
+USD $100 — enlace
+EUR €15 — enlace
+EUR €25 — enlace
+EUR €50 — enlace
+EUR €100 — enlace"></textarea>
+    </div>
+
+    <div class="field">
+      <label>{{ T['ui.qvapay_info'] }}</label>
+      <input type="text" id="donQvapayInfo" placeholder="Ej: {{ T['ui.user'] }} QvaPay: @tuusuario">
+    </div>
+    <label class="remember-row">
+      <input type="checkbox" id="donModuleEnabled">
+      Módulo de patrocinio/donaciones visible en /donaciones
+    </label>
+    <button class="btn-primary btn-tactile" id="saveDonationSettingsBtn" type="button" style="width:auto; padding:10px 22px;">{{ T['ui.save'] }}</button>
+  </div>
+
+  <div class="panel-box">
+    <h3>{{ T['ui.sponsors_registered'] }}</h3>
+    <table class="data-table">
+      <thead>
+        <tr><th>{{ T['ui.name'] }}</th><th>{{ T['ui.level'] }}</th><th>{{ T['ui.contact'] }}</th><th>{{ T['ui.message'] }}</th><th>{{ T['ui.status'] }}</th><th>{{ T['ui.date'] }}</th><th></th></tr>
+      </thead>
+      <tbody id="sponsorsTableBody"><tr><td colspan="7" class="small-note">{{ T['ui.loading'] }}</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="panel-box">
+    <h3>{{ T['ui.donations_registered'] }}</h3>
+    <table class="data-table">
+      <thead>
+        <tr><th>{{ T['ui.donor'] }}</th><th>{{ T['ui.amount'] }}</th><th>Método</th><th>{{ T['ui.contact'] }}</th><th>{{ T['ui.status'] }}</th><th>{{ T['ui.date'] }}</th><th></th></tr>
+      </thead>
+      <tbody id="donationsTableBody"><tr><td colspan="7" class="small-note">{{ T['ui.loading'] }}</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- CUENTAS (usuarios reales del sistema, con rol) -->
+<div class="admin-section" id="tab-accounts">
+  <div class="panel-box">
+    <h3>{{ T['ui.accounts'] }} y roles</h3>
+    <p class="small-note">
+      Owner tiene control total. Administrator y Manager administran según los permisos que se
+      les asignen. User y Guest solo acceden al contenido autorizado. Los permisos se verifican
+      siempre en el backend, no solo ocultando botones.
+    </p>
+    <table class="data-table">
+      <thead>
+        <tr><th>{{ T['ui.user'] }}</th><th>{{ T['ui.name'] }}</th><th>{{ T['ui.role'] }}</th><th>{{ T['ui.language'] }}</th><th>{{ T['ui.status'] }}</th><th></th></tr>
+      </thead>
+      <tbody id="accountsTableBody"><tr><td colspan="6" class="small-note">{{ T['ui.loading'] }}</td></tr></tbody>
+    </table>
+    <button class="btn-primary btn-tactile" id="newAccountBtn" type="button" style="margin-top:14px;">＋ Nuevo usuario</button>
+  </div>
+</div>
+
+<!-- SESIONES (dispositivos conectados en este momento) -->
+<div class="admin-section" id="tab-users">
+  <div class="panel-box">
+    <h3>{{ T['ui.sessions'] }} conectadas</h3>
+    <p class="small-note">
+      Se intenta identificar cada dispositivo por su navegador (modelo, sistema, o al menos
+      fabricante/plataforma) — un navegador normal no permite conocer el nombre personalizado
+      que alguien le puso a su equipo, así que cuando no se puede saber más se muestra el dato
+      más específico disponible. Se actualiza cada 2 segundos; un cliente sin actividad por más
+      de 90 segundos deja de aparecer en la lista.
+    </p>
+    <table class="data-table">
+      <thead>
+        <tr><th>{{ T['ui.device'] }}</th><th>{{ T['ui.ip'] }}</th><th>{{ T['ui.system'] }}</th><th>{{ T['ui.connected_since'] }}</th><th>{{ T['ui.last_activity'] }}</th></tr>
+      </thead>
+      <tbody id="usersTableBody">
+        <tr><td colspan="5" class="small-note">{{ T['ui.loading'] }}</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- DESCARGAS -->
+<div class="admin-section" id="tab-downloads">
+  <div class="panel-box">
+    <h3>{{ T['ui.active_downloads'] }}</h3>
+    <p class="small-note">{{ T['ui.auto_refresh'] }}</p>
+    <div id="liveDownloadsList">
+      <p class="small-note" style="margin-top:14px;">{{ T['ui.no_downloads'] }}</p>
+    </div>
+  </div>
+</div>
+
+<!-- AJUSTES -->
+<div class="admin-section" id="tab-settings">
+  <div class="panel-box">
+    <h3>{{ T['ui.price'] }} y redondeo</h3>
+    <div class="row-inline">
+      <div class="field">
+        <label>{{ T['ui.price'] }} por GB ($)</label>
+        <input type="number" id="settingPricePerGb" min="0" step="0.5">
+      </div>
+      <div class="field">
+        <label>{{ T['ui.rounding'] }}</label>
+        <select id="settingRoundingMode" style="width:100%; background:var(--bg-panel-2); border:1px solid var(--border); color:var(--text); padding:11px 12px; border-radius:6px;">
+          <option value="none">{{ T['ui.no_rounding'] }}</option>
+          <option value="round5">{{ T['ui.round5'] }}</option>
+          <option value="round10">{{ T['ui.round10'] }}</option>
+        </select>
+      </div>
+    </div>
+    <p class="small-note">{{ T['ui.rounding_examples'] }}</p>
+  </div>
+
+  <div class="panel-box">
+    <h3>{{ T['ui.distribution'] }}</h3>
+    <div class="field">
+      <label>¿Cómo se entrega el contenido?</label>
+      <select id="settingDistributionMode" style="width:100%; background:var(--bg-panel-2); border:1px solid var(--border); color:var(--text); padding:11px 12px; border-radius:6px;">
+        <option value="free">{{ T['ui.free_mode'] }} — todo el contenido autorizado se descarga sin cobro</option>
+        <option value="commercial">{{ T['ui.commercial_mode'] }} — el flujo de precio/solicitud/pago sigue activo</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="panel-box">
+    <h3>{{ T['ui.payment_mode'] }}</h3>
+    <p class="small-note">{{ T['ui.payment_config_note'] }}</p>
+    <div class="row-inline">
+      <div class="field">
+        <label>{{ T['ui.currency_code'] }}</label>
+        <input type="text" id="settingCurrencyCode" placeholder="USD, EUR, MXN...">
+      </div>
+      <div class="field">
+        <label>{{ T['ui.currency_symbol'] }}</label>
+        <input type="text" id="settingCurrencySymbol" placeholder="$, €...">
+      </div>
+    </div>
+    <div class="field">
+      <label>{{ T['ui.name'] }} del método de cobro</label>
+      <input type="text" id="settingPaymentMethodLabel" placeholder="Ej: Transferencia bancaria, PayPal, Efectivo...">
+    </div>
+    <div class="field">
+      <label>{{ T['ui.payment_instructions'] }}</label>
+      <input type="text" id="settingPaymentInstructions" placeholder="Ej: Datos de cuenta, número, referencia...">
+    </div>
+    <div class="field">
+      <label>{{ T['ui.account_number'] }}</label>
+      <input type="text" id="settingAccountNumber" placeholder="Cuenta, alias o referencia">
+    </div>
+    <div class="field">
+      <label>{{ T['ui.payment_qr'] }}</label>
+      <input type="file" id="paymentQrInput" accept=".png,.jpg,.jpeg,.webp" style="margin-bottom:8px; display:block;">
+      <button class="btn-secondary btn-tactile" id="uploadPaymentQrBtn" type="button">{{ T['ui.upload_qr'] }}</button>
+      <p class="small-note" id="paymentQrStatus" style="margin-top:8px;"></p>
+    </div>
+    <label class="remember-row">
+      <input type="checkbox" id="settingAcceptsCash">
+      Aceptar pago en efectivo
+    </label>
+  </div>
+
+  <div class="panel-box">
+    <h3>{{ T['ui.price'] }} y redondeo</h3>
+    <div class="row-inline">
+      <div class="field">
+        <label>{{ T['ui.price'] }} por GB</label>
+        <input type="number" id="settingPricePerGb" min="0" step="0.5">
+      </div>
+      <div class="field">
+        <label>{{ T['ui.rounding'] }}</label>
+        <select id="settingRoundingMode" style="width:100%; background:var(--bg-panel-2); border:1px solid var(--border); color:var(--text); padding:11px 12px; border-radius:6px;">
+          <option value="none">{{ T['ui.no_rounding'] }}</option>
+          <option value="round5">{{ T['ui.round5'] }}</option>
+          <option value="round10">{{ T['ui.round10'] }}</option>
+        </select>
+      </div>
+    </div>
+    <p class="small-note">{{ T['ui.rounding_examples'] }}</p>
+  </div>
+
+  <div class="panel-box">
+    <h3>{{ T['ui.business_info'] }}</h3>
+    <p class="small-note">
+      Esto es información secundaria que se muestra junto a la marca QBASwing MyServer
+      (por ejemplo, en el login). No reemplaza la identidad del producto — QBASwing MyServer,
+      de QBASwing Designer, se mantiene siempre visible en todas las instalaciones.
+    </p>
+    <div class="row-inline">
+      <div class="field">
+        <label>{{ T['ui.name'] }} de tu negocio</label>
+        <input type="text" id="settingBusinessName" placeholder="Ej: Clínica San José">
+      </div>
+      <div class="field">
+        <label>{{ T['ui.server_id'] }}</label>
+        <input type="text" id="settingServiceName" placeholder="Ej: Servidor Recepción">
+      </div>
+    </div>
+    <div class="field">
+      <label>{{ T['ui.language'] }} predeterminado</label>
+      <select id="settingDefaultLanguage" style="width:100%; background:var(--bg-panel-2); border:1px solid var(--border); color:var(--text); padding:11px 12px; border-radius:6px;">
+        <option value="es">🇪🇸 Español</option>
+        <option value="en">🇺🇸 English</option>
+        <option value="fr">🇫🇷 Français</option>
+        <option value="de">🇩🇪 Deutsch</option>
+        <option value="pt">🇵🇹 Português</option>
+        <option value="it">🇮🇹 Italiano</option>
+      </select>
+    </div>
+    <label class="remember-row">
+      <input type="checkbox" id="settingGuestOpenLogin">
+      Permitir acceso de invitado anónimo (usuario "invitado", sin cuenta ni contraseña)
+    </label>
+  </div>
+
+  <div class="panel-box">
+    <h3>{{ T['ui.backup'] }}</h3>
+    <p class="small-note">
+      Incluye usuarios, roles, permisos, configuración y catálogo de contenido (no los archivos
+      multimedia en sí, que se quedan donde están en el disco).
+    </p>
+    <button class="btn-secondary btn-tactile" id="downloadBackupBtn" type="button">⬇ {{ T['ui.download'] }} copia de seguridad</button>
+    <hr style="border-color:var(--border); margin:18px 0;">
+    <p class="small-note" style="color:#f0a79c;">
+      <strong>{{ T['ui.restore'] }}</strong> reemplaza TODA la base de datos actual (solo disponible para el
+      Propietario). Se guarda automáticamente una copia de la base actual antes de reemplazarla,
+      por si necesitas deshacerlo.
+    </p>
+    <input type="file" id="restoreFileInput" accept=".zip" style="margin-bottom:10px; display:block;">
+    <button class="btn-secondary btn-tactile" id="restoreBackupBtn" type="button">{{ T['ui.restore'] }} desde archivo</button>
+  </div>
+
+  <button class="btn-primary btn-tactile" id="saveSettingsBtn" type="button" style="width:auto; padding:10px 22px;">{{ T['ui.save'] }} ajustes</button>
+</div>
+
+<div class="toast-msg" id="toast"></div>
+
+<!-- Modal para ver mensaje de verificación de una solicitud -->
+<div class="modal-overlay" id="verifyModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>{{ T['ui.message'] }} de verificación</h3>
+      <button class="modal-close btn-tactile" id="closeVerifyModal">✕</button>
+    </div>
+    <p class="small-note">{{ T['ui.verify_compare'] }} que recibiste en tu propio teléfono:</p>
+    <div class="verify-message-box" id="verifyMessageBox">—</div>
+  </div>
+</div>
+
+<div class="brand-credit"><span class="l1">{{ T['app.footer'] }}</span><br>{{ T['app.rights'] }} © 2026</div>
+
+<script>
+  window.APP_NAME = {{ app_name | tojson }};
+  window.APP_T = {{ T | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/common.js') }}"></script>
+<script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+<script>
+  initLanguageSwitcher("{{ current_lang }}", {{ language_options | tojson }});
+</script>
+<script>window.I18N = {{ T|tojson }};</script>
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+
+<script id="QBASWING_DONATION_SAVE_V1">
+(function () {
+    const btn = document.getElementById("SaveDonationSettingsBtn");
+    if (!btn) return;
+
+    btn.addEventListener("click", async function (event) {
+        event.preventDefault();
+
+        const data = {
+            donation_goal_label: document.getElementById("donGoalLabel")?.value ?? "",
+            donation_goal_amount: document.getElementById("donGoalAmount")?.value ?? "",
+            donation_currency: document.getElementById("donCurrency")?.value ?? "",
+            donation_intro_text: document.getElementById("donIntroText")?.value ?? "",
+            donation_whatsapp: document.getElementById("donWhatsapp")?.value ?? "",
+            donation_usdt_info: document.getElementById("donUsdtinfo")?.value ?? "",
+            donation_pyusd_info: document.getElementById("donPyusdinfo")?.value ?? "",
+            donation_tropipay_info: document.getElementById("donTropipayInfo")?.value ?? "",
+            donation_qvapay_info: document.getElementById("donQvapayInfo")?.value ?? "",
+            donation_module_enabled: document.getElementById("donModuleEnable")?.checked ? 1 : 0
+        };
+
+        try {
+            const response = await fetch("/api/admin/donaciones/settings", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (!response.ok) {
+                throw new Error("HTTP " + response.status);
+            }
+
+            console.log("QBASWING: DONACIONES GUARDADAS");
+        } catch (error) {
+            console.error("QBASWING: ERROR GUARDANDO DONACIONES", error);
+        }
+    });
+})();
+</script>
+
+</body>
+</html>

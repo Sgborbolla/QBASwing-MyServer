@@ -1,0 +1,784 @@
+<section id="tab-library" class="space-y-4">
+  <div class="rounded-2xl border border-slate-700 bg-slate-900/80 p-4 shadow-lg">
+    <div class="mb-4">
+      <h2 class="text-xl font-bold text-white">Biblioteca</h2>
+      <p class="mt-1 text-sm text-slate-400">
+        Vista administrativa de todo el contenido detectado. Puedes navegar por categorías
+        y carpetas, buscar archivos y controlar directamente qué contenido está publicado.
+      </p>
+    </div>
+
+    <div class="relative">
+      <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+      <input
+        id="adminLibrarySearch"
+        type="search"
+        placeholder="Buscar por nombre, categoría, carpeta, extensión o ubicación..."
+        class="w-full rounded-xl border border-slate-700 bg-slate-950 py-3 pl-10 pr-4 text-sm text-white outline-none transition focus:border-blue-500"
+        autocomplete="off"
+      />
+      <span id="adminSearchCount" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500"></span>
+    </div>
+  </div>
+
+  <div
+    id="adminLibToolbar"
+    class="flex items-center gap-3 rounded-2xl border border-slate-700 bg-slate-900/70 p-3"
+  >
+    <button
+      id="adminLibBackBtn"
+      type="button"
+      class="hidden rounded-xl border border-slate-600 bg-slate-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+    >
+      ← Atrás
+    </button>
+
+    <div id="adminLibBreadcrumb" class="flex min-w-0 flex-wrap items-center gap-1 text-sm"></div>
+  </div>
+
+  <div id="adminLibraryGrid">
+    <div class="rounded-2xl border border-slate-700 bg-slate-900/70 p-8 text-center text-sm text-slate-400">
+      Cargando biblioteca...
+    </div>
+  </div>
+</section>
+
+<style>
+  .library-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  @media (min-width: 640px) {
+    .library-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .library-grid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+
+  .library-poster {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    background: #020617;
+  }
+
+  .library-poster img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .library-generic-cover {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 12px;
+    text-align: center;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+  }
+
+  .library-generic-cover .icon {
+    font-size: 32px;
+  }
+
+  .library-generic-cover .brand {
+    font-size: 11px;
+    font-weight: 700;
+    color: #cbd5e1;
+  }
+
+  .library-generic-cover .fname {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 10px;
+    color: #94a3b8;
+  }
+
+  .library-card {
+    overflow: hidden;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    background: rgba(15, 23, 42, 0.9);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  }
+
+  .library-card-meta {
+    padding: 10px;
+  }
+
+  .library-filename {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    font-weight: 700;
+    color: #f8fafc;
+  }
+
+  .library-sub {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 6px;
+    font-size: 11px;
+    color: #94a3b8;
+  }
+
+  .library-badge {
+    position: absolute;
+    z-index: 2;
+    border-radius: 999px;
+    padding: 3px 7px;
+    font-size: 9px;
+    font-weight: 700;
+    backdrop-filter: blur(5px);
+  }
+
+  .library-ext {
+    left: 7px;
+    top: 7px;
+    background: rgba(15, 23, 42, 0.85);
+    color: #e2e8f0;
+  }
+
+  .library-unpublished {
+    right: 7px;
+    top: 7px;
+    background: rgba(127, 29, 29, 0.92);
+    color: #fecaca;
+  }
+
+  .library-folder-icon {
+    display: flex;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    background: linear-gradient(135deg, #172554, #1e3a8a);
+  }
+
+  .library-toggle {
+    position: relative;
+    display: inline-block;
+    width: 34px;
+    height: 19px;
+    flex-shrink: 0;
+  }
+
+  .library-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .library-slider {
+    position: absolute;
+    inset: 0;
+    cursor: pointer;
+    border-radius: 999px;
+    background: #475569;
+    transition: .2s;
+  }
+
+  .library-slider::before {
+    content: "";
+    position: absolute;
+    width: 13px;
+    height: 13px;
+    left: 3px;
+    top: 3px;
+    border-radius: 50%;
+    background: white;
+    transition: .2s;
+  }
+
+  .library-toggle input:checked + .library-slider {
+    background: #2563eb;
+  }
+
+  .library-toggle input:checked + .library-slider::before {
+    transform: translateX(15px);
+  }
+
+  .library-category-title {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 20px 0 10px;
+    padding: 0 2px;
+    cursor: pointer;
+    color: white;
+    font-size: 18px;
+    font-weight: 800;
+  }
+
+  .library-category-count {
+    font-size: 11px;
+    font-weight: 500;
+    color: #64748b;
+  }
+
+  .library-crumb {
+    cursor: pointer;
+    color: #60a5fa;
+  }
+
+  .library-crumb:hover {
+    text-decoration: underline;
+  }
+
+  .library-crumb.current {
+    color: #e2e8f0;
+    cursor: default;
+    text-decoration: none;
+  }
+</style>
+
+<script>
+  const root = document.getElementById("adminLibraryGrid");
+  const toolbar = document.getElementById("adminLibToolbar");
+  const backBtn = document.getElementById("adminLibBackBtn");
+  const breadcrumb = document.getElementById("adminLibBreadcrumb");
+  const searchInput = document.getElementById("adminLibrarySearch");
+  const searchCount = document.getElementById("adminSearchCount");
+
+  let allFiles = [];
+  let view = { category: null, path: [] };
+  let debounce = null;
+
+  const categoryOrder = ["Películas", "Series", "Novelas", "Documentales", "General"];
+
+  function esc(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  async function api(url, options = {}) {
+    const response = await fetch(url, {
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+      ...options,
+    });
+
+    let data = null;
+    try {
+      data = await response.json();
+    } catch {
+      data = {};
+    }
+
+    if (!response.ok) {
+      throw new Error(data.error || data.message || `HTTP ${response.status}`);
+    }
+
+    return data;
+  }
+
+  function toast(message) {
+    if (typeof window.showToast === "function") {
+      window.showToast(message);
+      return;
+    }
+
+    const el = document.createElement("div");
+    el.textContent = message;
+    el.className =
+      "fixed bottom-5 left-1/2 z-[9999] -translate-x-1/2 rounded-xl bg-slate-800 px-4 py-3 text-sm font-semibold text-white shadow-xl";
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2200);
+  }
+
+  function orderCategory(cat) {
+    const index = categoryOrder.indexOf(cat);
+    return index === -1 ? categoryOrder.length : index;
+  }
+
+  function groupEntries(files, prefix) {
+    const folders = {};
+    const direct = [];
+
+    files.forEach((file) => {
+      const sub = file.subfolder || "";
+
+      if (sub === prefix) {
+        direct.push(file);
+        return;
+      }
+
+      if (prefix && !sub.startsWith(prefix + "/")) return;
+      if (!prefix && sub === "") return;
+
+      const rest = prefix ? sub.slice(prefix.length + 1) : sub;
+      const segment = rest.split("/")[0];
+
+      if (!folders[segment]) {
+        folders[segment] = {
+          type: "folder",
+          name: segment,
+          count: 0,
+          coverFileId: null,
+        };
+      }
+
+      folders[segment].count++;
+
+      if (!folders[segment].coverFileId && file.has_cover) {
+        folders[segment].coverFileId = file.id;
+      }
+    });
+
+    const folderEntries = Object.values(folders).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+
+    return [
+      ...folderEntries,
+      ...direct.map((file) => ({ type: "file", file })),
+    ];
+  }
+
+  function renderCard(file) {
+    const cover = file.has_cover
+      ? `<img src="/api/thumbnail/${encodeURIComponent(file.id)}" alt="${esc(file.filename)}" loading="lazy">`
+      : `
+        <div class="library-generic-cover">
+          <div class="icon">🎬</div>
+          <div class="brand">${esc(window.APP_NAME || "QBASwing MyServer")}</div>
+          <div class="fname">${esc(file.filename)}</div>
+        </div>
+      `;
+
+    return `
+      <div class="library-card admin-media-card" data-id="${esc(file.id)}">
+        <div class="library-poster">
+          ${cover}
+          <span class="library-badge library-ext">${esc(String(file.extension || "").toUpperCase())}</span>
+          ${
+            !file.visible
+              ? `<span class="library-badge library-unpublished">No publicado</span>`
+              : ""
+          }
+        </div>
+
+        <div class="library-card-meta">
+          <div class="library-filename" title="${esc(file.filename)}">
+            ${esc(file.filename)}
+          </div>
+
+          <div class="library-sub">
+            <span>${esc(file.size_gb)} GB</span>
+
+            <label
+              class="library-toggle"
+              title="Publicado / no publicado"
+              onclick="event.stopPropagation()"
+            >
+              <input
+                type="checkbox"
+                class="visibility-toggle"
+                data-id="${esc(file.id)}"
+                ${file.visible ? "checked" : ""}
+              >
+              <span class="library-slider"></span>
+            </label>
+          </div>
+
+          <div class="library-sub">
+            <span class="free-label">
+              ${file.is_free ? "🆓 Gratis" : "💲 De pago"}
+            </span>
+
+            <label
+              class="library-toggle"
+              title="Gratis / de pago"
+              onclick="event.stopPropagation()"
+            >
+              <input
+                type="checkbox"
+                class="free-toggle"
+                data-id="${esc(file.id)}"
+                ${file.is_free ? "checked" : ""}
+              >
+              <span class="library-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderFolder(category, entry) {
+    const cover = entry.coverFileId
+      ? `<img src="/api/thumbnail/${encodeURIComponent(entry.coverFileId)}" alt="${esc(entry.name)}" loading="lazy">`
+      : `<div class="library-folder-icon">📁</div>`;
+
+    return `
+      <div
+        class="library-card admin-folder-card cursor-pointer"
+        data-cat="${esc(category)}"
+        data-seg="${esc(entry.name)}"
+      >
+        <div class="library-poster">
+          ${cover}
+        </div>
+
+        <div class="library-card-meta">
+          <div class="library-filename">📁 ${esc(entry.name)}</div>
+          <div class="library-sub">
+            <span>${entry.count} elemento(s)</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderEntries(entries, category) {
+    return `
+      <div class="library-grid">
+        ${entries
+          .map((entry) =>
+            entry.type === "folder"
+              ? renderFolder(category, entry)
+              : renderCard(entry.file)
+          )
+          .join("")}
+      </div>
+    `;
+  }
+
+  function bindEvents() {
+    root.querySelectorAll(".visibility-toggle").forEach((input) => {
+      input.addEventListener("change", async (event) => {
+        const checkbox = event.target;
+        const id = Number(checkbox.dataset.id);
+
+        try {
+          await api("/api/admin/visibility", {
+            method: "POST",
+            body: JSON.stringify({
+              file_id: id,
+              visible: checkbox.checked,
+            }),
+          });
+
+          const file = allFiles.find((item) => item.id === id);
+          if (file) file.visible = checkbox.checked ? 1 : 0;
+
+          const card = checkbox.closest(".admin-media-card");
+          const poster = card?.querySelector(".library-poster");
+          const badge = card?.querySelector(".library-unpublished");
+
+          if (checkbox.checked && badge) {
+            badge.remove();
+          }
+
+          if (!checkbox.checked && !badge && poster) {
+            poster.insertAdjacentHTML(
+              "beforeend",
+              `<span class="library-badge library-unpublished">No publicado</span>`
+            );
+          }
+
+          toast(checkbox.checked ? "Publicado." : "Ocultado.");
+        } catch (error) {
+          checkbox.checked = !checkbox.checked;
+          toast(error.message || "No se pudo actualizar.");
+        }
+      });
+    });
+
+    root.querySelectorAll(".free-toggle").forEach((input) => {
+      input.addEventListener("change", async (event) => {
+        const checkbox = event.target;
+        const id = Number(checkbox.dataset.id);
+
+        try {
+          await api(`/api/admin/media/${id}/set-free`, {
+            method: "POST",
+            body: JSON.stringify({
+              is_free: checkbox.checked,
+            }),
+          });
+
+          const file = allFiles.find((item) => item.id === id);
+          if (file) file.is_free = checkbox.checked ? 1 : 0;
+
+          const card = checkbox.closest(".admin-media-card");
+          const label = card?.querySelector(".free-label");
+
+          if (label) {
+            label.textContent = checkbox.checked
+              ? "🆓 Gratis"
+              : "💲 De pago";
+          }
+
+          toast(
+            checkbox.checked
+              ? "Marcado como gratis."
+              : "Marcado como de pago."
+          );
+        } catch (error) {
+          checkbox.checked = !checkbox.checked;
+          toast(error.message || "No se pudo actualizar.");
+        }
+      });
+    });
+
+    root.querySelectorAll(".admin-folder-card").forEach((card) => {
+      card.addEventListener("click", () => {
+        const category = card.dataset.cat;
+        const segment = card.dataset.seg;
+
+        if (view.category === category) {
+          view = {
+            category,
+            path: [...view.path, segment],
+          };
+        } else {
+          view = {
+            category,
+            path: [segment],
+          };
+        }
+
+        renderLibrary();
+      });
+    });
+
+    root.querySelectorAll(".library-category-title").forEach((element) => {
+      element.addEventListener("click", () => {
+        view = {
+          category: element.dataset.cat,
+          path: [],
+        };
+
+        renderLibrary();
+      });
+    });
+  }
+
+  function renderLibrary() {
+    if (!allFiles.length) {
+      toolbar.classList.add("hidden");
+      root.innerHTML = `
+        <div class="rounded-2xl border border-slate-700 bg-slate-900/70 p-8 text-center text-sm text-slate-400">
+          Aún no se ha detectado contenido. Ve a "Ubicaciones" y usa el explorador.
+        </div>
+      `;
+      return;
+    }
+
+    toolbar.classList.remove("hidden");
+
+    if (view.category === null) {
+      backBtn.classList.add("hidden");
+      breadcrumb.innerHTML = "";
+
+      const groups = {};
+
+      allFiles.forEach((file) => {
+        (groups[file.category] ||= []).push(file);
+      });
+
+      const categories = Object.keys(groups).sort(
+        (a, b) => orderCategory(a) - orderCategory(b)
+      );
+
+      root.innerHTML = categories
+        .map((category) => {
+          const entries = groupEntries(groups[category], "");
+          const unpublished = groups[category].filter(
+            (file) => !file.visible
+          ).length;
+
+          return `
+            <div class="category-block">
+              <h2
+                class="library-category-title"
+                data-cat="${esc(category)}"
+              >
+                <span>${esc(category)}</span>
+                <span class="library-category-count">
+                  ${groups[category].length} elemento(s)
+                  ${unpublished ? ` · ${unpublished} sin publicar` : ""}
+                </span>
+              </h2>
+
+              ${renderEntries(entries, category)}
+            </div>
+          `;
+        })
+        .join("");
+
+      bindEvents();
+      return;
+    }
+
+    backBtn.classList.remove("hidden");
+
+    const category = view.category;
+    const path = view.path;
+    const prefix = path.join("/");
+
+    const categoryFiles = allFiles.filter(
+      (file) => file.category === category
+    );
+
+    const entries = groupEntries(categoryFiles, prefix);
+
+    const crumbs = [
+      `<span class="library-crumb" data-idx="-1">Biblioteca</span>`,
+      `<span class="text-slate-600">/</span>`,
+      `<span class="library-crumb ${
+        path.length === 0 ? "current" : ""
+      }" data-idx="0">${esc(category)}</span>`,
+    ];
+
+    path.forEach((segment, index) => {
+      crumbs.push(`<span class="text-slate-600">/</span>`);
+      crumbs.push(`
+        <span
+          class="library-crumb ${
+            index === path.length - 1 ? "current" : ""
+          }"
+          data-idx="${index + 1}"
+        >
+          ${esc(segment)}
+        </span>
+      `);
+    });
+
+    breadcrumb.innerHTML = crumbs.join("");
+
+    breadcrumb.querySelectorAll(".library-crumb").forEach((element) => {
+      element.addEventListener("click", () => {
+        const index = Number(element.dataset.idx);
+
+        if (index === -1) {
+          view = {
+            category: null,
+            path: [],
+          };
+        } else {
+          view = {
+            category,
+            path: path.slice(0, index),
+          };
+        }
+
+        renderLibrary();
+      });
+    });
+
+    backBtn.onclick = () => {
+      if (path.length > 0) {
+        view = {
+          category,
+          path: path.slice(0, -1),
+        };
+      } else {
+        view = {
+          category: null,
+          path: [],
+        };
+      }
+
+      renderLibrary();
+    };
+
+    root.innerHTML = renderEntries(entries, category);
+    bindEvents();
+  }
+
+  async function loadLibrary() {
+    try {
+      const data = await api("/api/admin/library");
+
+      allFiles = Array.isArray(data.files) ? data.files : [];
+      view = {
+        category: null,
+        path: [],
+      };
+
+      renderLibrary();
+    } catch (error) {
+      root.innerHTML = `
+        <div class="rounded-2xl border border-red-900/60 bg-red-950/30 p-6 text-center text-sm text-red-300">
+          Error al cargar la biblioteca.
+        </div>
+      `;
+    }
+  }
+
+  async function performSearch(query) {
+    if (!query) {
+      searchCount.textContent = "";
+      renderLibrary();
+      return;
+    }
+
+    try {
+      const data = await api(
+        "/api/admin/search?q=" + encodeURIComponent(query)
+      );
+
+      const files = Array.isArray(data.files) ? data.files : [];
+
+      searchCount.textContent = `${files.length} resultado(s)`;
+      toolbar.classList.add("hidden");
+
+      if (!files.length) {
+        root.innerHTML = `
+          <div class="rounded-2xl border border-slate-700 bg-slate-900/70 p-8 text-center text-sm text-slate-400">
+            Ningún resultado coincide con la búsqueda.
+          </div>
+        `;
+        return;
+      }
+
+      root.innerHTML = `
+        <div class="library-grid">
+          ${files.map(renderCard).join("")}
+        </div>
+      `;
+
+      bindEvents();
+    } catch {
+      toast("Error al buscar.");
+    }
+  }
+
+  searchInput.addEventListener("input", () => {
+    clearTimeout(debounce);
+
+    const query = searchInput.value.trim();
+
+    debounce = setTimeout(() => {
+      performSearch(query);
+    }, 250);
+  });
+
+  loadLibrary();
+</script>

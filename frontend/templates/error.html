@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ code }} · {{ app_name }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="cinema-bg"></div>
+<div class="login-wrap">
+  <div style="width:100%; max-width:380px; text-align:center;">
+    <div class="login-logo-wrap">
+      <img src="{{ url_for('static', filename='img/logo-qbaswing-128.png') }}" alt="QBASwing Designer">
+    </div>
+    <p class="brand-name" style="font-size:52px; margin-bottom:0;">{{ code }}</p>
+    <p class="brand-sub" style="font-size:16px; margin-top:6px;">{{ title }}</p>
+    <p class="small-note" style="margin-top:14px;">{{ message }}</p>
+    <a class="btn-primary" style="display:inline-block; text-decoration:none; margin-top:20px; width:auto; padding:10px 26px;" href="{{ url_for('index') }}">{{ T['ui.back'] }}</a>
+  </div>
+</div>
+<div class="brand-credit"><span class="l1">{{ T['app.footer'] }}</span><br>{{ T['app.rights'] }} © 2026</div>
+</body>
+</html>

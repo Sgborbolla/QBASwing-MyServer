@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ app_name }} · {{ T["ui.sponsor_title"] }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="cinema-bg"></div>
+
+<div class="topbar">
+  <div class="brand">
+    <img class="topbar-logo" src="{{ url_for('static', filename='img/logo-qbaswing-64.png') }}" alt="QBASwing Designer">
+    <span class="name">{{ app_name }}</span>
+    <span class="slogan">{{ T["ui.sponsor_title"] }}</span>
+  </div>
+  <div class="who">
+    <a class="logout-link" href="{{ url_for('login') }}">← Volver</a>
+  </div>
+</div>
+<div class="sprocket-strip"></div>
+
+<div class="donation-wrap">
+
+  <div class="donation-hero">
+    <img src="{{ url_for('static', filename='img/logo-qbaswing-128.png') }}" alt="QBASwing Designer" style="width:72px; height:72px; border-radius:14px;">
+    <h1>{{ T["ui.support_project"] }}</h1>
+    <p id="donationIntroText">
+      {{ settings.donation_intro_text or "Este servidor es un proyecto independiente. Si te resulta útil, puedes patrocinarlo o hacer una donación — cualquier aporte ayuda a mantenerlo funcionando." }}
+    </p>
+  </div>
+
+  <div class="panel-box" id="goalPanel" style="{{ '' if (settings.donation_goal_amount|float) > 0 else 'display:none;' }}">
+    <h3 id="goalLabel">{{ settings.donation_goal_label or 'Meta de recaudación' }}</h3>
+    <div class="goal-progress">
+      <div class="goal-head">
+        <span class="goal-amounts">
+          <span id="raisedAmount">{{ '%.2f'|format(settings.raised_amount) }}</span> / {{ '%.2f'|format(settings.donation_goal_amount) }} {{ settings.donation_currency }}
+        </span>
+        <span id="raisedPercent">{{ settings.raised_percent }}%</span>
+      </div>
+      <div class="goal-bar"><div class="goal-bar-fill" id="goalBarFill" style="width:{{ settings.raised_percent }}%;"></div></div>
+    </div>
+    <p class="small-note" id="approvedSponsorsNote">{{ settings.approved_sponsors }} patrocinador(es) confirmado(s) hasta ahora. Gracias.</p>
+  </div>
+
+  <div class="panel-box" style="text-align:center;">
+    <p class="small-note" style="margin-top:0;">{{ T["ui.contact_direct"] }}</p>
+    <a class="whatsapp-cta" id="whatsappCta" href="#" target="_blank" rel="noopener">
+      <span>📲</span><span>{{ T["ui.whatsapp"] }}</span>
+    </a>
+  </div>
+
+  <div class="donation-tabs">
+    <div class="donation-tab active btn-tactile" data-target="sponsorForm">{{ T["ui.be_sponsor"] }}</div>
+    <div class="donation-tab btn-tactile" data-target="donateForm">{{ T["ui.donation_form"] }}</div>
+  </div>
+
+  <!-- Formulario de patrocinio -->
+  <div class="donation-form-section active panel-box" id="sponsorForm">
+    <h3>{{ T["ui.sponsor_form"] }}</h3>
+    <p class="small-note" style="margin-top:0;">
+      Deja tus datos y el propietario te contactará para acordar los detalles del patrocinio.
+    </p>
+    <div class="field">
+      <label>{{ T["ui.company"] }}</label>
+      <input type="text" id="sponsorName" placeholder="Tu nombre o el de tu empresa">
+    </div>
+    <div class="row-inline">
+      <div class="field">
+        <label>{{ T["ui.optional_email"] }}</label>
+        <input type="text" id="sponsorEmail" placeholder="correo@ejemplo.com">
+      </div>
+      <div class="field">
+        <label>{{ T["ui.optional_phone"] }}</label>
+        <input type="text" id="sponsorPhone" placeholder="+53 ...">
+      </div>
+    </div>
+    <div class="field">
+      <label>{{ T["ui.sponsor_level"] }}</label>
+<select class="sponsor-level-select" id="sponsorLevel">
+        <option value="bronce">{{ T["ui.bronze"] }}</option>
+        <option value="plata">{{ T["ui.silver"] }}</option>
+        <option value="oro">{{ T["ui.gold"] }}</option>
+        <option value="personalizado">{{ T["ui.custom"] }}</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>{{ T["ui.optional_message"] }}</label>
+      <input type="text" id="sponsorMessage" placeholder="Cuéntanos algo más...">
+    </div>
+    <button class="btn-primary btn-tactile" id="sendSponsorBtn" type="button" style="width:auto; padding:11px 24px;">{{ T["ui.send"] }}</button>
+  </div>
+
+  <!-- {{ T["ui.donation_form"] }} -->
+  <div class="donation-form-section panel-box" id="donateForm">
+    <h3>{{ T["ui.donation_form"] }}</h3>
+    <div class="row-inline">
+      <div class="field">
+        <label>{{ T["ui.optional_name"] }}</label>
+        <input type="text" id="donorName" placeholder="Anónimo">
+      </div>
+      <div class="field">
+        <label>{{ T["ui.contact"] }}</label>
+        <input type="text" id="donorContact" placeholder="Correo, teléfono...">
+      </div>
+    </div>
+    <div class="row-inline">
+      <div class="field">
+        <label>{{ T["ui.amount"] }}</label>
+        <input type="number" id="donationAmount" min="0" step="0.01" placeholder="0.00">
+      </div>
+      <div class="field">
+        <label>{{ T["ui.currency_code"] }}</label>
+        <input type="text" id="donationCurrency" value="{{ settings.donation_currency }}">
+      </div>
+    </div>
+    <div class="field">
+      <label>{{ T["ui.method"] }}</label>
+      <select class="donation-method-select" id="donationMethod">
+        <option value="crypto">{{ T["ui.crypto"] }}</option>
+        <option value="qvapay">{{ T["ui.qvapay"] }}</option>
+<option value="tropipay">{{ T["donations.tropipay_title"] }}</option>
+        <option value="whatsapp">{{ T["ui.whatsapp"] }}</option>
+      </select>
+    </div>
+
+    <div class="donation-method-info" id="cryptoInfo">
+<div class="qbaswing-direct-method">
+<p><strong>USDT (TRC20)</strong></p>
+<p>Dirección de recepción: <code style="overflow-wrap:anywhere;word-break:break-word;">TEy7Pr8rnJzP3eTJsSKEEPxjUZHqFw1uy2</code></p>
+<p>USDT (TRC20): Realiza la transferencia utilizando exclusivamente la red TRC20.
+No utilices otra red, ya que una transferencia realizada por una red diferente puede no llegar correctamente.</p>
+<p><strong>PYUSD (Solana)</strong></p>
+<p>Dirección de recepción: <code style="overflow-wrap:anywhere;word-break:break-word;">Yd2kjTQe3R7caax9wR2yvGJ3ZNrviXcPVpnY8mBtvEf</code></p>
+<p>PYUSD (Solana): Realiza la transferencia utilizando exclusivamente la red Solana.
+No utilices otra red, ya que una transferencia realizada por una red diferente puede no llegar correctamente.</p>
+<p>Antes de confirmar la operación, verifica que la red seleccionada coincida exactamente con la indicada para cada criptomoneda.</p>
+</div>
+{{ settings.donation_crypto_info or "El propietario aún no configuró la información de billeteras cripto. Usa la opción de WhatsApp mientras tanto." }}</div>
+    <div class="donation-method-info" id="qvapayInfo">
+<p><strong>Usuario de recepción:</strong> @sergio7zuw542</p>
+</div>
+    
+<div class="donation-method-info" id="tropipayInfo">
+<p><strong>TropiPay — USD</strong></p>
+<p>
+<a href="https://tppay.me/mtp9sg1h" target="_blank" rel="noopener noreferrer">15 USD</a> ·
+<a href="https://tppay.me/mtpa5gev" target="_blank" rel="noopener noreferrer">25 USD</a> ·
+<a href="https://tppay.me/mtpa8cli" target="_blank" rel="noopener noreferrer">50 USD</a> ·
+<a href="https://tppay.me/mtpabikn" target="_blank" rel="noopener noreferrer">100 USD</a>
+</p>
+<p><strong>TropiPay — EUR</strong></p>
+<p>
+<a href="https://tppay.me/mtpae4rv" target="_blank" rel="noopener noreferrer">15 EUR</a> ·
+<a href="https://tppay.me/mtpaj7uh" target="_blank" rel="noopener noreferrer">25 EUR</a> ·
+<a href="https://tppay.me/mtpalmu0" target="_blank" rel="noopener noreferrer">50 EUR</a> ·
+<a href="https://tppay.me/mtpant4f" target="_blank" rel="noopener noreferrer">100 EUR</a>
+</p>
+</div>
+<div class="donation-method-info" id="whatsappInfo">
+      Escríbenos directo a WhatsApp para coordinar tu donación:
+      <a id="whatsappInfoLink" href="#" target="_blank" rel="noopener">{{ T["ui.open_whatsapp"] }}</a>
+    </div>
+
+    <div class="field">
+      <label>{{ T["ui.optional_message"] }}</label>
+      <input type="text" id="donationMessage" placeholder="Comentario, referencia de pago, etc.">
+    </div>
+
+    <p class="small-note">
+      Con {{ T["ui.qvapay"] }}, el sistema genera automáticamente una factura y te dirige a la página segura
+      de pago. Una vez confirmado el pago, la donación se actualiza automáticamente. Las opciones
+      de criptomonedas y WhatsApp pueden requerir confirmación manual.
+    </p>
+    <button class="btn-primary btn-tactile" id="sendDonationBtn" type="button" style="width:auto; padding:11px 24px;">{{ T["ui.send"] }} de donación</button>
+  </div>
+
+</div>
+
+<div class="toast-msg" id="toast"></div>
+
+<div class="brand-credit"><span class="l1">{{ T['app.footer'] }}</span><br>{{ T['app.rights'] }} © 2026</div>
+
+<script>
+  window.DONATION_SETTINGS = {{ settings | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/common.js') }}"></script>
+<script>
+window.I18N = {
+  name_required: {{ T["msg.name_required"]|tojson }},
+  sponsor_sent: {{ T["msg.sponsor_sent"]|tojson }},
+  send_failed: {{ T["msg.send_failed"]|tojson }},
+  valid_amount: {{ T["msg.valid_amount"]|tojson }},
+  qvapay_usd: {{ T["msg.qvapay_usd"]|tojson }},
+  qvapay_link: {{ T["msg.qvapay_link"]|tojson }},
+  qvapay_created: {{ T["msg.qvapay_created"]|tojson }},
+  donation_sent: {{ T["msg.donation_sent"]|tojson }},
+  qvapay_unconfigured: {{ T["msg.qvapay_unconfigured"]|tojson }},
+  donation_failed: {{ T["msg.donation_failed"]|tojson }}
+};
+</script>
+<script src="{{ url_for('static', filename='js/donations.js') }}"></script>
+
+
+
+
+</body>
+</html>

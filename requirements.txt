@@ -1,0 +1,12 @@
+Flask>=2.3,<4.0
+
+# Opcional: genera el código QR de acceso LAN y el QR de pago en el panel de
+# administración. Sin esta librería la app funciona igual, solo que en vez
+# del QR se muestra la URL/instrucciones en texto.
+qrcode[pil]>=7.4
+
+# Opcional: anuncia el servidor en la red local via mDNS/Bonjour, para
+# descubrimiento automático futuro sin escribir la IP a mano. Sin esta
+# librería la app funciona igual — el acceso por IP/QR manual nunca depende
+# de esto.
+zeroconf>=0.130; python_version >= "3.8"

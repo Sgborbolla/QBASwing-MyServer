@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ T['setup.title'] }} · QBASwing MyServer</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="lang-switcher" id="langSwitcher"></div>
+<div class="cinema-bg"></div>
+
+<div class="setup-wrap">
+  <div class="setup-card">
+    <div class="sprocket-strip thin"></div>
+
+    <div class="marquee" style="padding-top:22px;">
+      <div class="login-logo-wrap">
+        <img src="{{ url_for('static', filename='img/logo-qbaswing-128.png') }}" alt="QBASwing Designer">
+      </div>
+      <p class="brand-name" style="font-size:24px;">{{ T['setup.title'] }}</p>
+      <p class="brand-sub">{{ T['setup.subtitle'] }}</p>
+    </div>
+
+    <div class="setup-steps">
+      <div class="step active"></div>
+      <div class="step"></div>
+      <div class="step"></div>
+    </div>
+
+    <div class="body">
+      <div class="login-error" id="setupError"></div>
+
+      <!-- Paso 1: cuenta del propietario -->
+      <div class="setup-step-panel active">
+        <h3 style="margin:0 0 14px; font-size:14px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.08em;">{{ T['setup.step.owner'] }}</h3>
+        <div class="field">
+          <label>{{ T['setup.owner_name'] }} *</label>
+          <input type="text" id="ownerName">
+        </div>
+        <div class="field">
+          <label>{{ T['setup.owner_email'] }}</label>
+          <input type="text" id="ownerEmail">
+        </div>
+        <div class="field">
+          <label>{{ T['setup.owner_username'] }} *</label>
+          <input type="text" id="ownerUsername" autocomplete="username">
+        </div>
+        <div class="field">
+          <label>{{ T['setup.owner_password'] }} *</label>
+          <input type="password" id="ownerPassword" autocomplete="new-password">
+        </div>
+        <div class="field">
+          <label>{{ T['setup.owner_password_confirm'] }} *</label>
+          <input type="password" id="ownerPasswordConfirm" autocomplete="new-password">
+        </div>
+        <div class="setup-nav">
+          <span></span>
+          <button class="btn-primary" data-next type="button">{{ T['common.save'] }} →</button>
+        </div>
+      </div>
+
+      <!-- Paso 2: datos del servidor -->
+      <div class="setup-step-panel">
+        <h3 style="margin:0 0 14px; font-size:14px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.08em;">{{ T['setup.step.server'] }}</h3>
+        <div class="field">
+          <label>{{ T['setup.business_name'] }}</label>
+          <input type="text" id="businessName">
+        </div>
+        <div class="field">
+          <label>{{ T['setup.server_name'] }}</label>
+          <input type="text" id="serverName" placeholder={{ T["public.ej_servidor_de_clinica_san_jose_opcional"] }}>
+          <p class="small-note" style="margin-top:6px;">
+            Este es solo un identificador interno de tu instalación — el producto seguirá
+            mostrándose siempre como <strong>{{ app_name }}</strong>, de {{ app_company }}.
+          </p>
+        </div>
+        <div class="field">
+          <label>{{ T['setup.language'] }}</label>
+          <select id="setupLanguage" style="width:100%; background:var(--bg-panel-2); border:1px solid var(--border); color:var(--text); padding:11px 12px; border-radius:6px;">
+            {% for opt in language_options %}
+            <option value="{{ opt.code }}" {% if opt.code == current_lang %}selected{% endif %}>{{ opt.flag }} {{ opt.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="setup-nav">
+          <button class="btn-secondary" data-back type="button">← {{ T['common.cancel'] }}</button>
+          <button class="btn-primary" data-next type="button">{{ T['common.save'] }} →</button>
+        </div>
+      </div>
+
+      <!-- Paso 3: confirmación -->
+      <div class="setup-step-panel">
+        <h3 style="margin:0 0 14px; font-size:14px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.08em;">{{ T['setup.step.content'] }}</h3>
+        <p class="small-note" style="margin-bottom:16px;">
+          {{ T['setup.finish{{ T["public.al_finalizar_se_creara_tu_cuenta_de_strong_t"] }}nav.users'] }}</strong> con control total, y
+          {{ app_name }} quedará listo para iniciar sesión. Este asistente no volverá a
+          aparecer en los siguientes arranques.
+        </p>
+        <div class="setup-nav">
+          <button class="btn-secondary" data-back type="button">← {{ T['common.cancel'] }}</button>
+          <button class="btn-primary" id="finishSetupBtn" type="button">{{ T['setup.finish'] }}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.APP_T = {{ T | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+<script>
+  initLanguageSwitcher("{{ current_lang }}", {{ language_options | tojson }});
+</script>
+<script>
+window.I18N = {
+  setup_password_min: {{ T["msg.password_min"]|tojson }},
+  setup_initialized: {{ T["msg.server_initialized"]|tojson }},
+  setup_failed: {{ T["msg.setup_failed"]|tojson }},
+  connection_error: {{ T["msg.connection_error"]|tojson }}
+};
+</script>
+<script src="{{ url_for('static', filename='js/setup.js') }}"></script>
+</body>
+</html>

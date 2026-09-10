@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ app_name }} · Biblioteca</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="lang-switcher" id="langSwitcher"></div>
+<div class="public-support-actions">
+  <a href="/donaciones" class="support-btn support-donations">
+    ❤️ {{ T.get("nav.donations", "Donaciones") }}<br><small>Donations</small></a>
+  <a href="/patrocinadores" class="support-btn support-sponsors">
+    🤝 {{ T.get("nav.sponsors", "Patrocinadores") }}<br><small>Sponsors</small></a>
+</div>
+
+<div class="cinema-bg"></div>
+
+<div class="topbar">
+  <div class="brand">
+    <img class="topbar-logo" src="{{ url_for('static', filename='img/logo-qbaswing-64.png') }}" alt="QBASwing Designer">
+    <span class="name">{{ app_name }}</span>
+    <span class="slogan">{{ business_label if business_label else T['app.slogan'] }}</span>
+  </div>
+  <div class="who">
+    <span class="tag">{{ T["ui.client"] }}</span>
+    <span>{{ username }}</span>
+    <button class="btn-secondary btn-tactile" id="myRequestsBtn" type="button" style="padding:6px 12px; font-size:12px;">{{ T["ui.requests"] }}</button>
+    <a class="logout-link" href="{{ url_for('logout') }}">{{ T['nav.logout'] }}</a>
+  </div>
+</div>
+<div class="sprocket-strip"></div>
+
+<div class="client-search-bar">
+  <span class="search-icon">🔍</span>
+  <input type="text" id="clientSearchInput" placeholder="Buscar películas, series, novelas, documentales...">
+  <button class="search-clear-btn" id="clientSearchClear" type="button" style="display:none;" aria-label={{ T["public.limpiar_busqueda"] }}>✕</button>
+</div>
+
+<!-- Panel de selección (ticket de cine). En PC flota a la derecha; en móvil
+     se integra arriba de la biblioteca (ver media query en style.css) para
+     no tapar nunca los primeros vídeos. -->
+<div class="ticket-panel" id="ticketPanel">
+  <div class="head">
+    <span class="label">{{ T["ui.selection"] }}</span>
+    <span class="count"><span id="selCount">0</span> {{ T["ui.files"] }}</span>
+  </div>
+  <div class="divider"></div>
+  <div class="rows">
+    <div class="row"><span>{{ T["ui.total_size"] }}</span><span class="val" id="selGb">0 GB</span></div>
+    <div class="row" id="pricePerGbRow"><span>{{ T["ui.price_per_gb"] }}</span><span class="val" id="selPriceGb">$10</span></div>
+  </div>
+  <div class="total" id="totalPriceRow">
+    <span class="lbl">{{ T["ui.total_to_pay"] }}</span>
+    <span class="amt">$<span id="selPrice">0</span></span>
+  </div>
+  <div class="actions">
+    <button class="clear-btn btn-tactile" id="clearSelBtn">{{ T["ui.clear"] }}</button>
+    <button class="download-btn btn-tactile" id="downloadBtn">{{ T["ui.download"] }}</button>
+  </div>
+</div>
+
+<div class="content-wrap" id="libraryRoot">
+  <div class="empty-state">
+    <div class="big">🎬</div>
+    <div class="title">{{ T["ui.loading"] }}</div>
+  </div>
+</div>
+
+<!-- Modal de pago -->
+<div class="modal-overlay" id="paymentModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="paymentModalTitle">¿Cómo vas a pagar?</h3>
+      <button class="modal-close btn-tactile" id="closePaymentModal">✕</button>
+    </div>
+
+    <!-- Paso 1: elegir método -->
+    <div id="paymentMethodStep">
+      <p class="small-note">
+        Selecciona una forma de pago para tu selección de <strong id="methodStepCount">0</strong> archivo(s)
+        por <strong id="methodStepPrice">$0</strong>.
+      </p>
+      <div class="method-choice-grid">
+        <button class="method-choice-btn btn-tactile" id="chooseTransferBtn" type="button">
+          <span class="method-icon">📱</span>
+          <span class="method-label">{{ T["ui.transfer_qr"] }}</span>
+          <span class="method-desc">{{ T["ui.payment_configured"] }}</span>
+        </button>
+        <button class="method-choice-btn btn-tactile" id="chooseCashBtn" type="button">
+          <span class="method-icon">💵</span>
+          <span class="method-label">{{ T["ui.cash"] }}</span>
+          <span class="method-desc">{{ T["ui.pay_cash"] }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Paso 2a: transferencia (requiere verificación obligatoria) -->
+    <div id="paymentTransferStep" style="display:none;">
+      <p class="small-note">
+        El QR y el número de cuenta son alternativas, no necesitas usar ambos. Debes completar la
+        verificación para poder enviar la solicitud.
+      </p>
+
+      <div class="pay-options">
+        <div class="pay-option">
+          <h4>{{ T["ui.account_option"] }}</h4>
+          <div class="account-box">
+            <span id="accountNumberText">—</span>
+            <button class="btn-secondary btn-tactile" id="copyAccountBtn" type="button">{{ T["ui.copy"] }}</button>
+          </div>
+          <p class="small-note" id="accountMessageText"></p>
+        </div>
+
+        <div class="pay-option">
+          <h4>{{ T["ui.qr_option"] }}</h4>
+          <img class="qr-img" id="qrImage" src="" alt="QR de pago">
+        </div>
+      </div>
+
+      <div class="verify-box">
+        <h4>{{ T["ui.verification"] }}</h4>
+        <p class="small-note" id="verifyIntroText">
+          Después de realizar el pago, copia y pega aquí el mensaje o comprobante
+          completo que recibiste. Sin esto, la solicitud no se puede enviar.
+        </p>
+        <textarea id="verificationText" rows="4" placeholder={{ T["public.pega_aqui_el_mensaje_recibido"] }}></textarea>
+        <button class="btn-secondary btn-tactile" id="backToMethodBtn" type="button" style="margin-top:10px;">← Cambiar método</button>
+        <button class="btn-primary btn-tactile" id="sendVerificationBtn" style="margin-top:10px;">{{ T["ui.send_request"] }}</button>
+      </div>
+    </div>
+
+    <!-- Paso 2b: efectivo (no requiere verificación) -->
+    <div id="paymentCashStep" style="display:none;">
+      <p class="small-note">
+        Tu solicitud quedará marcada como <strong>"Pendiente de cobro en efectivo"</strong>. El
+        administrador se acercará a cobrarte, y solo entonces aprobará el acceso a tus {{ T["ui.files"] }}.
+      </p>
+      <button class="btn-secondary btn-tactile" id="backToMethodBtn2" type="button">← Cambiar método</button>
+      <button class="btn-primary btn-tactile" id="confirmCashBtn" type="button" style="margin-top:10px;">{{ T["ui.confirm_cash"] }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de "{{ T["ui.requests"] }}" -->
+<div class="modal-overlay" id="requestsModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>{{ T["ui.requests"] }}</h3>
+      <button class="modal-close btn-tactile" id="closeRequestsModal">✕</button>
+    </div>
+    <div id="myRequestsList"><p class="small-note">{{ T["ui.loading"] }}</p></div>
+  </div>
+</div>
+
+<!-- Panel de progreso de descarga -->
+<div class="download-overlay" id="downloadOverlay">
+  <div class="download-box">
+    <h3>{{ T["ui.downloading"] }}</h3>
+    <div class="general-progress">
+      <div class="bar"><div class="fill" id="generalFill"></div></div>
+      <div class="lbl"><span id="generalPct">0%</span> · <span id="generalGb">0 / 0 GB</span></div>
+    </div>
+    <div id="fileProgressList"></div>
+    <button class="btn-secondary btn-tactile" id="closeDownloadOverlay" style="margin-top:14px; display:none;">{{ T["ui.close"] }}</button>
+  </div>
+</div>
+
+<!-- Reproductor / visor en navegador -->
+<div class="download-overlay" id="previewOverlay">
+  <div class="download-box" id="previewBox" style="max-width:720px; width:92vw;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <h3 id="previewTitle" style="margin:0; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:80%;">—</h3>
+      <button class="btn-secondary btn-tactile" id="closePreviewOverlay" style="padding:6px 12px;">✕</button>
+    </div>
+    <div id="previewContent" style="display:flex; justify-content:center; align-items:center; min-height:200px;"></div>
+  </div>
+</div>
+
+<div class="toast-msg" id="toast"></div>
+
+<div class="brand-credit"><span class="l1">{{ T['app.footer'] }}</span><br>{{ T['app.rights'] }} © 2026</div>
+
+<script>
+  window.APP_NAME = {{ app_name | tojson }};
+  window.APP_T = {{ T | tojson }};
+  window.APP_DISTRIBUTION_MODE = {{ distribution_mode | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/common.js') }}"></script>
+<script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+<script>
+  initLanguageSwitcher("{{ current_lang }}", {{ language_options | tojson }});
+</script>
+<script>
+window.I18N = {
+  no_content: {{ T["ui.no_content"]|tojson }},
+  no_results: {{ T["ui.no_results"]|tojson }},
+  library: {{ T["ui.library"]|tojson }},
+  files: {{ T["ui.files"]|tojson }},
+  home: "Inicio",
+  empty_folder: {{ T["ui.empty_folder"]|tojson }},
+  back: {{ T["ui.back"]|tojson }},
+  view: {{ T["ui.view"]|tojson }},
+  free: {{ T["ui.free"]|tojson }},
+  request_approved: {{ T["msg.request_approved"]|tojson }},
+  request_failed: {{ T["msg.request_failed"]|tojson }},
+  library_error: {{ T["ui.library_error"]|tojson }},
+  account_copied: {{ T["msg.account_copied"]|tojson }},
+  copy_failed: {{ T["msg.copy_failed"]|tojson }},
+  verification_required: {{ T["msg.verification_required"]|tojson }}
+};
+</script>
+<script src="{{ url_for('static', filename='js/client.js') }}"></script>
+</body>
+</html>

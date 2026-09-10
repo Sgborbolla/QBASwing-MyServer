@@ -1,0 +1,401 @@
+---
+---
+
+<section id="tab-donations" class="admin-section">
+
+  <div class="panel-box">
+    <h2>Patrocinio y donaciones</h2>
+
+    <h3>Página pública de donaciones</h3>
+
+    <p class="small-note">
+      Comparte este enlace con quien quiera patrocinar o donar.
+      No requiere cuenta ni inicio de sesión.
+    </p>
+
+    <a
+      class="btn-secondary btn-tactile"
+      href="/donaciones/"
+      target="_blank"
+      rel="noopener"
+    >
+      🔗 Abrir /donaciones
+    </a>
+  </div>
+
+
+  <div class="panel-box">
+
+    <h3>Meta de recaudación y contacto</h3>
+
+    <div class="donation-grid">
+
+      <div class="field">
+        <label for="donGoalLabel">Etiqueta de la meta</label>
+        <input
+          type="text"
+          id="donGoalLabel"
+          placeholder="Meta de recaudación"
+        />
+      </div>
+
+      <div class="field">
+        <label for="donGoalAmount">Monto de la meta</label>
+        <input
+          type="number"
+          id="donGoalAmount"
+          min="0"
+          step="1"
+        />
+      </div>
+
+      <div class="field">
+        <label for="donCurrency">Moneda</label>
+        <input
+          type="text"
+          id="donCurrency"
+          placeholder="USD"
+        />
+      </div>
+
+    </div>
+
+
+    <div class="field">
+      <label for="donIntroText">
+        Texto de introducción (opcional)
+      </label>
+
+      <input
+        type="text"
+        id="donIntroText"
+        placeholder="Mensaje que ve el visitante en /donaciones"
+      />
+    </div>
+
+
+    <div class="field">
+      <label for="donWhatsapp">
+        Número de WhatsApp de contacto
+      </label>
+
+      <input
+        type="text"
+        id="donWhatsapp"
+        placeholder="+53 58147030"
+      />
+    </div>
+
+
+    <div class="field">
+      <label for="donCryptoInfo">
+        Información para donar por criptomonedas
+        (direcciones de billetera, redes aceptadas, etc.)
+      </label>
+
+      <input
+        type="text"
+        id="donCryptoInfo"
+        placeholder="Ej: BTC: bc1q... · USDT (TRC20): T..."
+      />
+    </div>
+
+
+    <div class="field">
+      <label for="donQvapayInfo">
+        Información para donar por QvaPay
+      </label>
+
+      <input
+        type="text"
+        id="donQvapayInfo"
+        placeholder="Ej: Usuario QvaPay: @tuusuario"
+      />
+    </div>
+
+
+    <label class="remember-row">
+      <input
+        type="checkbox"
+        id="donModuleEnabled"
+      />
+
+      <span>
+        Módulo de patrocinio/donaciones visible en /donaciones
+      </span>
+    </label>
+
+
+    <button
+      class="btn-primary btn-tactile"
+      id="saveDonationSettingsBtn"
+      type="button"
+    >
+      Guardar
+    </button>
+
+  </div>
+
+
+  <div class="panel-box">
+
+    <h3>Patrocinadores registrados</h3>
+
+    <div class="table-wrap">
+      <table class="data-table donations-table">
+
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Nivel</th>
+            <th>Contacto</th>
+            <th>Mensaje</th>
+            <th>Estado</th>
+            <th>Fecha</th>
+            <th></th>
+          </tr>
+        </thead>
+
+        <tbody id="sponsorsTableBody">
+          <tr>
+            <td colspan="7" class="small-note">
+              Cargando...
+            </td>
+          </tr>
+        </tbody>
+
+      </table>
+    </div>
+
+  </div>
+
+
+  <div class="panel-box">
+
+    <h3>Donaciones registradas</h3>
+
+    <div class="table-wrap">
+      <table class="data-table donations-table">
+
+        <thead>
+          <tr>
+            <th>Donante</th>
+            <th>Monto</th>
+            <th>Método</th>
+            <th>Contacto</th>
+            <th>Estado</th>
+            <th>Fecha</th>
+            <th></th>
+          </tr>
+        </thead>
+
+        <tbody id="donationsTableBody">
+          <tr>
+            <td colspan="7" class="small-note">
+              Cargando...
+            </td>
+          </tr>
+        </tbody>
+
+      </table>
+    </div>
+
+  </div>
+
+</section>
+
+
+<style>
+
+  .admin-section {
+    display: none;
+  }
+
+  .admin-section.active {
+    display: block;
+  }
+
+  .panel-box {
+    background: rgba(15, 23, 42, .88);
+    border: 1px solid rgba(148, 163, 184, .16);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.18);
+  }
+
+  .panel-box h2 {
+    color: #f8fafc;
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0 0 18px;
+  }
+
+  .panel-box h3 {
+    color: #f8fafc;
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 10px;
+  }
+
+  .small-note {
+    color: #94a3b8;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  .donation-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .field {
+    margin-bottom: 14px;
+  }
+
+  .field label {
+    display: block;
+    color: #cbd5e1;
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .field input {
+    width: 100%;
+    box-sizing: border-box;
+    background: #0f172a;
+    color: #f8fafc;
+    border: 1px solid rgba(148,163,184,.22);
+    border-radius: 9px;
+    padding: 10px 11px;
+    outline: none;
+    font-size: 12px;
+  }
+
+  .field input:focus {
+    border-color: #64748b;
+  }
+
+  .remember-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: #cbd5e1;
+    font-size: 12px;
+    margin: 8px 0 16px;
+    cursor: pointer;
+  }
+
+  .remember-row input {
+    width: 16px;
+    height: 16px;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger {
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 8px 12px;
+  }
+
+  .btn-primary {
+    background: #2563eb;
+    color: #fff;
+  }
+
+  .btn-secondary {
+    background: #334155;
+    color: #e2e8f0;
+  }
+
+  .btn-danger {
+    background: #991b1b;
+    color: #fecaca;
+  }
+
+  .btn-tactile:active {
+    transform: scale(.97);
+  }
+
+  .table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .donations-table {
+    width: 100%;
+    min-width: 950px;
+    border-collapse: collapse;
+  }
+
+  .donations-table th {
+    padding: 10px;
+    text-align: left;
+    color: #94a3b8;
+    font-size: 10px;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(148,163,184,.16);
+    white-space: nowrap;
+  }
+
+  .donations-table td {
+    padding: 11px 10px;
+    color: #e2e8f0;
+    font-size: 12px;
+    border-bottom: 1px solid rgba(148,163,184,.1);
+    vertical-align: middle;
+  }
+
+  .donations-table tbody tr:hover {
+    background: rgba(30,41,59,.45);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .badge.approved {
+    background: rgba(34,197,94,.14);
+    color: #86efac;
+  }
+
+  .badge.rejected {
+    background: rgba(239,68,68,.14);
+    color: #fca5a5;
+  }
+
+  .badge.pending {
+    background: rgba(245,158,11,.14);
+    color: #fbbf24;
+  }
+
+  @media (max-width: 760px) {
+    .donation-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .panel-box {
+      padding: 13px;
+      border-radius: 12px;
+    }
+
+    .donations-table {
+      min-width: 900px;
+    }
+  }
+
+</style>

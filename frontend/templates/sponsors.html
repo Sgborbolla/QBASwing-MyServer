@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{ T.get("nav.sponsors", "Patrocinadores") }}</title>
+  <link rel="stylesheet" href="{{ url_for("static", filename="css/style.css") }}">
+</head>
+<body>
+
+<main class="container" style="max-width:1000px;margin:0 auto;padding:24px 16px;">
+  <section class="panel-box">
+    <h1>🤝 {{ T.get("nav.sponsors", "Patrocinadores") }}<br><small>Sponsors</small></h1>
+
+    <p class="small-note">
+      {{ T.get("sponsors.description", "Gracias a quienes apoyan este proyecto.") }}
+    </p>
+
+    {% if sponsors %}
+      <div class="cards-grid">
+        {% for sponsor in sponsors %}
+          <article class="panel-box">
+            <h3>{{ sponsor.get("name", "Patrocinador") }}</h3>
+            {% if sponsor.get("description") %}
+              <p>{{ sponsor.get("description") }}</p>
+            {% endif %}
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="small-note">
+        {{ T.get("sponsors.empty", "Todavía no hay patrocinadores publicados.") }}
+      </p>
+    {% endif %}
+
+    <div style="margin-top:20px;">
+      <a href="/client" class="btn-secondary btn-tactile"
+         style="text-decoration:none;">
+        ← {{ T.get("common.back", "Volver") }}
+      </a>
+    </div>
+  </section>
+</main>
+
+</body>
+</html>
