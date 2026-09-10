@@ -19,3 +19,6 @@ images.before_*/
 
 *.txt
 !requirements.txt
+
+.library_i18n_diagnostico
+cd
